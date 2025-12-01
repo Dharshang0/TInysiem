@@ -1,0 +1,14 @@
+{
+  "bruteforce_login": {
+    "event": "failed_login",
+    "threshold": 5,
+    "window_seconds": 60,
+    "group_by": "ip"
+  },
+
+  "credential_stuffing": {
+    "sequence": ["failed_login", "failed_login", "success_login"],
+    "window_seconds": 120,
+    "group_by": "username"
+  }
+}
