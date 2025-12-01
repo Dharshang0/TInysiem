@@ -1,64 +1,63 @@
 import streamlit as st
 import json
-import pandas as pd
+import os
 import time
-from datetime import datetime
 
-ALERT_FILE = "alerts.jsonl"
-EVENT_FILE = "events.jsonl"
+st.set_page_config(
+    page_title="TinySIEM Dashboard",
+    layout="wide",
+    page_icon="🔍"
+)
 
-st.set_page_config(page_title="TinySIEM Dashboard", layout="wide")
-
+# Auto-refresh every 5 seconds
 st.title("🔍 TinySIEM Dashboard")
 st.caption("Real-time monitoring and alert visualization")
 
-# --- Load events ---
-def load_events():
-    events = []
-    try:
-        with open(EVENT_FILE, "r") as f:
-            for line in f:
-                events.append(json.loads(line))
-    except FileNotFoundError:
-        pass
-    return events
+st.markdown("""---""")
 
-# --- Load alerts ---
-def load_alerts():
-    alerts = []
-    try:
-        with open(ALERT_FILE, "r") as f:
-            for line in f:
-                alerts.append(json.loads(line))
-    except FileNotFoundError:
-        pass
-    return alerts
+# --------------------- Helper Functions ---------------------
+def load_log(path):
+    """Safely load JSON lines log file."""
+    if not os.path.exists(path):
+        return []
 
+    data = []
+    with open(path, "r") as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                try:
+                    data.append(json.loads(line))
+                except:
+                    pass
+    return data
 
-# Layout
-event_col, alert_col = st.columns(2)
+# --------------------- Layout ---------------------
+col1, col2 = st.columns(2)
 
-with event_col:
+with col1:
     st.subheader("📁 Incoming Events")
-    event_placeholder = st.empty()
 
-with alert_col:
+    events = load_log("events.log")
+
+    if len(events) == 0:
+        st.info("No events received yet. Waiting for incoming logs...")
+    else:
+        st.json(events[-20:])  # Show last 20 events
+
+
+with col2:
     st.subheader("🚨 Alerts")
-    alert_placeholder = st.empty()
 
+    alerts = load_log("alerts.log")
 
-# Auto-refresh dashboard
-while True:
-    events = load_events()
-    alerts = load_alerts()
+    if len(alerts) == 0:
+        st.success("No alerts triggered. System is stable.")
+    else:
+        st.json(alerts[-20:])  # Show last 20 alerts
 
-    if events:
-        df_events = pd.DataFrame(events)
-        event_placeholder.dataframe(df_events.tail(20))
-
-    if alerts:
-        df_alerts = pd.DataFrame(alerts)
-        alert_placeholder.dataframe(df_alerts.tail(20))
-
-    time.sleep(2)
-    st.rerun()
+# --------------------- Refresh Notice ---------------------
+st.markdown("---")
+st.caption("Auto-refreshing every 5 seconds…")
+time.sleep(5)
+st.experimental_set_query_params(refresh=str(time.time()))
