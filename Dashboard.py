@@ -61,4 +61,4 @@ while True:
         alert_placeholder.dataframe(df_alerts.tail(20))
 
     time.sleep(2)
-    st.experimental_rerun()
+    st.rerun()
